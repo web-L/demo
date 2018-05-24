@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>商品</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+		<link rel="stylesheet" href="../css/loading.css" />
+		<link rel="stylesheet" href="../css/app.css" />
+	</head>
+
+	<body class="app-bgb">
+		<header class="mui-bar mui-bar-nav app-top">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title" id="title">热门活动</h1>
+		</header>
+		<div class="mui-content">
+			<div class="index-pro-list precision_column clear" id="precision_column" style="min-height: 300px;">
+				<ul v-cloak>
+					<li v-for="item in items" :id="item.goods_id" :title="item.goods_name" class="product_item">
+						<a class="product_item_link" :id="item.model_id">
+							<div class="pic_box">
+								<img class="" :src="item.goods_image" alt="" class="">
+							</div>
+							<h3>{{item.goods_title}}</h3>
+							<div class="price_box">
+								<em><i>￥</i v-html="">{{item.goods_price}}</em>
+								<span class="points1" v-if="item.goods_points >0" style="font-size: 12px;"><em id="points_num">+{{item.goods_points}}积分</em></span></div>
+						</a>
+					</li>
+				</ul>
+			</div>
+			<div id="loading" class="btn p5 f8 center"></div>
+		</div>
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/jquery-1.8.2.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/app.js"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			mui.init();
+			var more;
+			var p;
+			var listRows = 20; //显示总条数
+			var totalPages; //总页数
+			var page = 1; //当前页数
+			var storeId = ''; //商铺ID
+			var self;
+			var loadingbtn;
+			var news = new Vue({
+				el: '.mui-content',
+				data: {
+					items: [] //列表信息流数据
+				}
+			});
+			loadingbtn = document.getElementById("loading");
+			more = GetQueryString('id');
+			if(more == "hotGoods"){
+				$("#title").html("最新活动")
+			}else if(more == "recommendGoods"){
+				$("#title").html("特惠专区")
+			}else if(more == "newGoods"){
+				$("#title").html("最新产品")
+			}else {
+				$("#title").html("热搜榜")
+			}
+			page = 1;
+			loadingbtn.innerHTML = loading;
+			GoodsList2(more, listRows, page, storeId);
+			//商品详情
+			mui('.index-pro-list').on('tap', '.product_item_link', function() {
+				var item = this;
+				var itemID = this.getAttribute('id');
+				location.href = 'product-detail-new-needtem.html?id=' + itemID;
+			})
+			$(function() {
+				var winH = $(window).height(); //页面可视区域高度  
+				var i = 1;
+				$(window).scroll(function() {
+					var pageH = $(document.body).height();
+					var scrollT = $(window).scrollTop(); //滚动条top  
+					var aa = (pageH - winH - scrollT) / winH;
+					if(aa < 0.02) {
+						if(page != p && page != 1) {
+							p = page;
+							if(page <= totalPages) {
+								GoodsList2(more, listRows, page, storeId);
+							} else {
+								loadingbtn.innerHTML = onmore;
+							}
+						}
+					}
+				});
+			});
+
+			function GoodsList2(key, PlistRows, Ppage, PstoreId) {
+				loadingbtn.innerHTML = loading;
+				
+				var url;
+				if(key == "newseek"){
+					var params = {				
+						listRows: PlistRows,
+						page: Ppage
+					}
+					 url='?r=index/guess-goods&token=' + UserInfo.token()
+				}else {
+					var params = {
+						cat: key,
+						listRows: PlistRows,
+						page: Ppage,
+						storeId: PstoreId
+					}
+					 url='?r=goods/list&token=' + UserInfo.token()
+				}
+				
+				//请求地址数据
+				$.ajax_query({
+					func_url: url,
+					params: params,
+					type: 'GET',
+					onSuccess: function(data) {
+						totalPages = data.data.totalPages; //总页数
+						page += 1; //下页
+						if(page == 1) {
+							news.items = data.data.goodsList
+							if(news.items.length == 0) {
+								precision_column.innerHTML = goodssitp;
+								loadingbtn.innerHTML = ''
+							} else {}
+						} else {
+
+							news.items = news.items.concat(data.data.goodsList);
+						}
+					},
+					onError: function(errcode) {
+						precision_column.innerHTML = goodssitp;
+						loadingbtn.innerHTML = ''
+					},
+				}, '3')
+			}
+		</script>
+
+</html>
